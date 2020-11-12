@@ -1,0 +1,35 @@
+stages:
+  - lint
+  - build
+
+image: guangie88/rustfmt-clippy:1.47.0-stable
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/cargo
+
+cache:
+  paths:
+    - cargo/
+    - target/
+
+lint:fmt:
+  stage: lint
+  script:
+    - cargo fmt --all -- --check
+
+lint:clippy:
+  stage: lint
+  script:
+    - cargo clippy --all
+
+build:bin:
+  stage: build
+  image: ekidd/rust-musl-builder:latest
+  cache: {}
+  only:
+    - tags
+  script:
+    - cargo build --release
+  artifacts:
+    paths:
+      - target/x86_64-unknown-linux-musl/release/git-switch-user

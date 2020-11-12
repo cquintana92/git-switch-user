@@ -1,0 +1,7 @@
+disable-push = true
+pre-release-commit-message = "(cargo-release) Bump version"
+no-dev-version = true
+disable-publish = true
+tag-prefix = ""
+tag-name = "{{version}}"
+sign-tag = true
