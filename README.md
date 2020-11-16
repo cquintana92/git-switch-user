@@ -26,6 +26,13 @@ As the binary name starts with `git-`, you can use it as it was a `git` subcomma
 $ git switch-user
 ```
 
+Also, if you add the following alias to your `.gitconfig` you can use it as `git su`:
+
+```
+[alias]
+    su = switch-user
+```
+
 ### Help
 
 You can get the available options by invoking the following command:
