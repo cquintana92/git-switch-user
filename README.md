@@ -1,4 +1,4 @@
-[![Build status](https://github.com/cquintana92/gitswitch-user/workflows/ci/badge.svg)](https://github.com/cquintana92/git-switch-user/actions)
+[![Build status](https://github.com/cquintana92/git-switch-user/workflows/ci/badge.svg)](https://github.com/cquintana92/git-switch-user/actions)
 
 # Git switch user
 
