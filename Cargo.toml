@@ -1,6 +1,6 @@
 [package]
 name = "git-switch-user"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Carlos Quintana <carlos@cquintana.dev>"]
 edition = "2018"
 description = "Manage your git identities with ease"
