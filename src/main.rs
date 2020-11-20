@@ -180,9 +180,11 @@ fn set(matches: &ArgMatches) {
             }
         };
         git_set("commit.gpgsign", "true", global);
+        git_set("tag.gpgsign", "true", global);
         git_set("user.signingkey", &key, global);
     } else {
         git_unset("commit.gpgsign", global);
+        git_unset("tag.gpgsign", global);
         git_unset("user.signingkey", global);
     }
 
