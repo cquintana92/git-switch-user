@@ -10,7 +10,8 @@ use std::process::Command;
 
 mod profiles;
 
-const VERSION: &str = git_version::git_version!();
+const VERSION: &str =
+    git_version::git_version!(args = ["--tags", "--abbrev=1", "--dirty=-modified"]);
 const LIST_SUBCOMMAND: &str = "list";
 const CREATE_SUBCOMMAND: &str = "create";
 const DELETE_SUBCOMMAND: &str = "delete";
