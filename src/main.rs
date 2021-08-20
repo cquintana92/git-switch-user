@@ -148,7 +148,7 @@ fn git_set(var: &str, value: &str, global: bool) {
 
 fn git_unset(var: &str, global: bool) {
     let scope = if global { "--global" } else { "--local" }.to_string();
-    git_command(&["config", "unset", &scope, var]);
+    git_command(&["config", "--unset", &scope, var]);
 }
 
 fn set(matches: &ArgMatches) {
