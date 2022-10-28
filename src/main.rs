@@ -148,9 +148,7 @@ fn delete(matches: &ArgMatches) {
 
 fn git_set(var: &str, value: &str, global: bool) {
     let scope = if global { "--global" } else { "--local" }.to_string();
-    git_command(&["config", &scope, var, value]).unwrap_or_else(|| {
-        std::process::exit(1);
-    });
+    let _ = git_command(&["config", &scope, var, value]);
 }
 
 fn git_unset(var: &str, local_default: &str, global: bool) {
@@ -173,9 +171,7 @@ fn git_unset(var: &str, local_default: &str, global: bool) {
             }
         }
     }
-    git_command(&["config", "--unset", &scope, var]).unwrap_or_else(|| {
-        std::process::exit(1);
-    });
+    let _ = git_command(&["config", "--unset", &scope, var]);
 }
 
 fn set(matches: &ArgMatches) {
