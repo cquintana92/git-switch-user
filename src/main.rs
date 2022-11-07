@@ -24,7 +24,7 @@ fn exit_with_log(msg: &str) {
     std::process::exit(1);
 }
 
-fn git_command(args: &[&str]) -> String {
+fn git_command(args: &[&str]) -> Option<String> {
     debug!("Running git {:?}", args);
     let output = Command::new("git")
         .args(args)
@@ -37,16 +37,20 @@ fn git_command(args: &[&str]) -> String {
             .trim()
             .to_string();
         debug!("Output: {}", res);
-        res
+        return Some(res);
     } else {
-        let msg = format!("Error running git command: git {:?}", args);
-        exit_with_log(&msg);
-        unreachable!()
+        error!("Error running git command: git {:?}", args);
+        return None;
     }
 }
 
 fn get_current_email() -> String {
-    git_command(&["config", "--get", "user.email"])
+    match git_command(&["config", "--get", "user.email"]) {
+        Some(mail) => mail,
+        None => {
+            std::process::exit(1);
+        }
+    }
 }
 
 fn list() {
@@ -144,12 +148,30 @@ fn delete(matches: &ArgMatches) {
 
 fn git_set(var: &str, value: &str, global: bool) {
     let scope = if global { "--global" } else { "--local" }.to_string();
-    git_command(&["config", &scope, var, value]);
+    let _ = git_command(&["config", &scope, var, value]);
 }
 
-fn git_unset(var: &str, global: bool) {
+fn git_unset(var: &str, local_default: &str, global: bool) {
     let scope = if global { "--global" } else { "--local" }.to_string();
-    git_command(&["config", "--unset", &scope, var]);
+    if !global {
+        match git_command(&["config", "--get", "--global", var]) {
+            Some(_) => {
+                // global value exists that might have unintended consquences
+                // for our local settings. We set local value to a sensible
+                // default to prevent global setting from having an effect
+                debug!(
+                    "Found global value for {}. Setting local value to '{}'",
+                    var, local_default
+                );
+                git_set(var, local_default, global);
+                return;
+            }
+            None => {
+                debug!("Global value for {} not found. Unsetting local value", var);
+            }
+        }
+    }
+    let _ = git_command(&["config", "--unset", &scope, var]);
 }
 
 fn set(matches: &ArgMatches) {
@@ -184,9 +206,9 @@ fn set(matches: &ArgMatches) {
         git_set("tag.gpgsign", "true", global);
         git_set("user.signingkey", &key, global);
     } else {
-        git_unset("commit.gpgsign", global);
-        git_unset("tag.gpgsign", global);
-        git_unset("user.signingkey", global);
+        git_unset("commit.gpgsign", "false", global);
+        git_unset("tag.gpgsign", "false", global);
+        git_unset("user.signingkey", "", global);
     }
 
     match p.ssh_key {
@@ -194,7 +216,7 @@ fn set(matches: &ArgMatches) {
             git_set("core.sshCommand", &format!("ssh -i {}", k), global);
         }
         None => {
-            git_unset("core.sshCommand", global);
+            git_unset("core.sshCommand", "ssh", global);
         }
     }
 }
