@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use std::path::PathBuf;
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
@@ -18,44 +19,42 @@ pub struct ProfilesContent {
 pub struct ProfileRepository;
 
 impl ProfileRepository {
-    pub fn get_all() -> Vec<Profile> {
-        let config_file = Self::get_config_file();
-        let contents =
-            std::fs::read(&config_file).expect("error reading contents from the config file");
+    pub fn get_all() -> Result<Vec<Profile>> {
+        let config_file = Self::get_config_file().context("Error getting config file")?;
+        let contents = std::fs::read(&config_file).context("error reading contents from the config file")?;
         if contents.is_empty() {
-            return vec![];
+            return Ok(vec![]);
         }
-        let contents_as_str = std::str::from_utf8(&contents)
-            .expect("error converting config file contents to string");
-        let profiles: ProfilesContent =
-            toml::from_str(&contents_as_str).expect("error reading profile list");
-        profiles.profiles
+        let contents_as_str = std::str::from_utf8(&contents).context("error converting config file contents to string")?;
+        let profiles: ProfilesContent = toml::from_str(contents_as_str).context("error reading profile list")?;
+        Ok(profiles.profiles)
     }
 
-    pub fn find_by_name(profile_name: &str) -> Option<Profile> {
-        let all = Self::get_all();
+    pub fn find_by_name(profile_name: &str) -> Result<Option<Profile>> {
+        let all = Self::get_all().context("Error getting profiles")?;
         for p in all {
             if p.name == profile_name {
-                return Some(p);
+                return Ok(Some(p));
             }
         }
-        None
+        Ok(None)
     }
 
-    pub fn create(p: Profile) {
-        let mut all = Self::get_all();
+    pub fn create(p: Profile) -> Result<()> {
+        let mut all = Self::get_all().context("Error getting profiles")?;
         for profile in all.iter() {
             if profile.name == p.name {
                 warn!("You are trying to create a profile with a name that already exists! Please remove it first");
-                return;
+                return Ok(());
             }
         }
         all.push(p);
-        Self::store_profiles(&ProfilesContent { profiles: all });
+        Self::store_profiles(&ProfilesContent { profiles: all }).context("Error storing profiles")?;
+        Ok(())
     }
 
-    pub fn remove(profile_name: &str) {
-        let all = Self::get_all();
+    pub fn remove(profile_name: &str) -> Result<()> {
+        let all = Self::get_all().context("Error retrieving profiles")?;
         let mut new = Vec::new();
         let mut found = false;
         for profile in all {
@@ -69,32 +68,33 @@ impl ProfileRepository {
         if !found {
             warn!("Could not find a profile with the name {}", profile_name);
         } else {
-            Self::store_profiles(&ProfilesContent { profiles: new });
+            Self::store_profiles(&ProfilesContent { profiles: new }).context("Error storing profiles")?;
             info!("Profile {} has been removed", profile_name);
         }
+        Ok(())
     }
 
-    fn store_profiles(profiles: &ProfilesContent) {
-        let file = Self::get_config_file();
-        let content =
-            toml::ser::to_string(profiles).expect("error converting profile list to string");
-        std::fs::write(file, content).expect("error writing profile list to file");
+    fn store_profiles(profiles: &ProfilesContent) -> Result<()> {
+        let file = Self::get_config_file().context("Error getting config file")?;
+        let content = toml::ser::to_string(profiles).context("error converting profile list to string")?;
+        std::fs::write(file, content).context("error writing profile list to file")?;
+        Ok(())
     }
 
-    fn get_config_file() -> PathBuf {
-        let config_dir = Self::get_config_dir();
+    fn get_config_file() -> Result<PathBuf> {
+        let config_dir = Self::get_config_dir().context("Error getting config dir")?;
         if !config_dir.exists() {
-            std::fs::create_dir_all(&config_dir).unwrap();
+            std::fs::create_dir_all(&config_dir).context("Error creating directories")?;
         }
         let f = config_dir.join("users.toml");
         if !f.exists() {
-            std::fs::File::create(&f).unwrap();
+            std::fs::File::create(&f).context("Error creating config file")?;
         }
-        f
+        Ok(f)
     }
 
-    fn get_config_dir() -> PathBuf {
-        let directories = xdg::BaseDirectories::new().expect("could not get the base directory");
-        directories.get_config_home().join("git-switch-user")
+    fn get_config_dir() -> Result<PathBuf> {
+        let directories = xdg::BaseDirectories::new().context("could not get the base directory")?;
+        Ok(directories.get_config_home().join("git-switch-user"))
     }
 }
