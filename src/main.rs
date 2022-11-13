@@ -148,19 +148,20 @@ fn git_set(var: &str, value: &str, global: bool) -> Result<()> {
 fn git_unset(var: &str, local_default: &str, global: bool) -> Result<()> {
     let scope = if global { "--global" } else { "--local" }.to_string();
     if !global {
-        match git_command(&["config", "--get", "--global", var]).context("Error running git command")? {
-            GitOutput::Value(_) => {
-                // global value exists that might have unintended consquences
-                // for our local settings. We set local value to a sensible
-                // default to prevent global setting from having an effect
-                debug!("Found global value for {}. Setting local value to '{}'", var, local_default);
-                git_set(var, local_default, global).context("Error running git set")?;
-            }
-            GitOutput::NoValue => {
-                debug!("Global value for {} not found. Unsetting local value", var);
-            }
+        if let GitOutput::Value(_) = git_command(&["config", "--get", "--global", var]).context("Error running git command")? {
+            // global value exists that might have unintended consquences
+            // for our local settings. We set local value to a sensible
+            // default to prevent global setting from having an effect
+            debug!("Found global value for {}. Setting local value to '{}'", var, local_default);
+            git_set(var, local_default, global).context("Error running git set")?;
+            // early return - otherwise the setting we just made will get
+            // unset again later in this routine
+            return Ok(());
+        } else {
+            debug!("Global value for {} not found. Unsetting local value", var);
         }
     }
+
     let _ = git_command(&["config", "--unset", &scope, var]).context("Error running git command")?;
     Ok(())
 }
