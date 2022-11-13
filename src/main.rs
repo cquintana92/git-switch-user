@@ -162,7 +162,10 @@ fn git_unset(var: &str, local_default: &str, global: bool) -> Result<()> {
         }
     }
 
-    let _ = git_command(&["config", "--unset", &scope, var]).context("Error running git command")?;
+    if let GitOutput::Value(_) = git_command(&["config", "--get", &scope, var]).context("Error running git command")? {
+        let _ = git_command(&["config", "--unset", &scope, var]).context("Error running git command")?;
+    }
+
     Ok(())
 }
 
