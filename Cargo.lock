@@ -199,7 +199,7 @@ dependencies = [
 
 [[package]]
 name = "git-switch-user"
-version = "1.1.0"
+version = "1.1.1"
 dependencies = [
  "anyhow",
  "clap",
